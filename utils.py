@@ -8,6 +8,50 @@ from tensorflow.python.training import moving_averages
 # functions
 
 
+class Singleton(type):
+    """
+    Singleton pattern
+    """
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class PlaceHolderFactory(metaclass = Singleton):
+    """
+    the placeholder factory
+    """
+    def __init__(self):
+        """
+        Constructor
+        """
+        self.placeholder_all = tf.placeholder(tf.int32,[None])
+        self.idx = 0
+        self.ranges = []
+
+    def get_placeholder(self,num):
+        """
+        Get one placeholder slice
+        """
+        print ('debug idx',self.idx)
+        placeholder = self.placeholder_all[self.idx]
+        self.ranges.append(num)
+        self.idx += 1
+        return placeholder
+
+    def get_placeholder_all(self):
+        """
+        Get the full placeholder
+        """
+        return self.placeholder_all
+
+    def get_ranges(self):
+        """
+        Get the ranges for each placeholder
+        """
+        return self.ranges
+
 def get_mask_wh(var, mask_shape):
     """
     Get conv kernel width height mask
@@ -71,8 +115,10 @@ def masked_kernel(name,kernel_shape, wh_mask_shape, c_mask_shape,dtype = tf.floa
     return the masked convolution kernel and the corresponding select placeholder
     """
     # width height select & channel select
-    wh_select_ph = tf.placeholder(tf.int32)
-    c_select_ph = tf.placeholder(tf.int32)
+    #wh_select_ph = tf.placeholder(tf.int32)
+    #c_select_ph = tf.placeholder(tf.int32)
+    wh_select_ph = PlaceHolderFactory().get_placeholder(len(wh_mask_shape))
+    c_select_ph = PlaceHolderFactory().get_placeholder(len(c_mask_shape))
 
     # super kernel
     full_conv_var = tf.get_variable(name = name,shape=kernel_shape,dtype=dtype)
@@ -85,7 +131,7 @@ def masked_kernel(name,kernel_shape, wh_mask_shape, c_mask_shape,dtype = tf.floa
     # masked convolution
     masked_kernel = full_conv_var * wh_mask * c_mask
 
-    return masked_kernel, wh_select_ph, c_select_ph
+    return masked_kernel, (wh_select_ph,len(wh_mask_shape)), (c_select_ph,len(c_mask_shape))
 
 
 def batch_norm(x, is_training, name="bn", decay=0.9, epsilon=1e-5,
@@ -159,6 +205,7 @@ def masked_conv(feature,name,kernel_shape,wh_mask_shape,c_mask_shape,strides,pad
     with tf.variable_scope(name):
         out = tf.nn.conv2d(feature,filter=kernel,strides=strides,padding=padding,data_format = data_format,name = name)
         if bn:
+            # TODO: does bn need mask ?
             out = batch_norm(out,is_training,decay = decay,epsilon=epsilon,data_format=data_format)
         if activation:
             out = tf.nn.leaky_relu(out, alpha=0.1)
@@ -171,7 +218,8 @@ def dynamic_depth_residual_block(input_data,name,kernel_shape,wh_mask_shape,c_ma
                    max_num_layer=2):
 
     short_cut = input_data
-    depth_select_ph = tf.placeholder(tf.int32)
+    #depth_select_ph = tf.placeholder(tf.int32)
+    depth_select_ph = PlaceHolderFactory().get_placeholder(max_num_layer)
     candidate_layers = []
     select_phs = []
     with tf.variable_scope(name):
@@ -184,10 +232,23 @@ def dynamic_depth_residual_block(input_data,name,kernel_shape,wh_mask_shape,c_ma
             select_phs.append(c_select_ph)
         input_data = tf.case(candidate_layers)
         residual_output = input_data + short_cut
-        select_phs.append(depth_select_ph)
+        select_phs.append((depth_select_ph,max_num_layer))
 
     return residual_output,select_phs
 
+def get_model_searchable_params_helper(placeholder_list):
+    """
+    get the model's searchable parameters
+    placeholder_list: list of tuple [(placeholder,range),...]
+    return the placeholders and the corresponding range list
+    """
+    placeholders ,ranges = list(zip(*placeholder_list))
+    placeholder_all = tf.placeholder(tf.int32,[len(ranges)])
+    print(placeholders)
+    for i,placeholder in enumerate(placeholders):
+        print(placeholder,i)
+        placeholder = placeholder_all[i]
+    return placeholder_all,ranges
 
 
 def depthwise_conv():
@@ -242,7 +303,9 @@ def residual_block(input_data, input_channel, filter_num1, filter_num2, trainabl
 
 
 def route(name, previous_output, current_output):
+    """
 
+    """
     with tf.variable_scope(name):
         output = tf.concat([current_output, previous_output], axis=-1)
 
