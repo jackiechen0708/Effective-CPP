@@ -1,0 +1,64 @@
+def isTerminal(self):
+        # draw game
+        if self.isFull():
+            return -1
+
+for rowNum in range(self.HEIGHT):
+    for colNum in range(self.WIDTH):
+        # up
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum + 1][rowNum] == self.board[colNum + 2][rowNum] == self.board[colNum + 3][rowNum]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+        # down
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum - 1][rowNum] == self.board[colNum - 2][rowNum] == self.board[colNum - 3][rowNum]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # right
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum][rowNum + 1] == self.board[colNum][rowNum + 2] == self.board[colNum][rowNum + 3]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # left
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum][rowNum - 1] == self.board[colNum][rowNum - 2] == self.board[colNum][rowNum - 3]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # up right
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum + 1][rowNum + 1] == self.board[colNum + 2][rowNum + 2] == self.board[colNum + 3][rowNum + 3]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # up left
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum + 1][rowNum - 1] == self.board[colNum + 2][rowNum - 2] == self.board[colNum + 3][rowNum - 3]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # down right
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum - 1][rowNum + 1] == self.board[colNum - 2][rowNum + 2] == self.board[colNum - 3][rowNum + 3]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # down left
+        try:
+            if self.board[colNum][rowNum] == self.board[colNum - 1][rowNum - 1] == self.board[colNum - 2][rowNum - 2] == self.board[colNum - 3][rowNum - 3]:
+                return self.board[colNum][rowNum]
+        except:
+            pass
+
+        # game not over
+        return None
