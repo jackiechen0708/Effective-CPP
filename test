@@ -12,8 +12,23 @@ def q1(lst):
     return len(result)
 
 def q2(lst):
-    pass
-
+    add = [i[0] for i in lst]
+    dec = [i[1] for i in lst]
+    add.sort()
+    dec.sort()
+    result = 1
+    i = 1
+    j = 0
+    cur = 1
+    while i < len(add) and j < len(dec):
+       if add[i] <= dec[j]:
+           cur += 1
+           result = max(result,cur)
+           i += 1
+       else:
+           cur -= 1
+           j += 1
+    return result
 
 def q3(lst):
     result = [lst[0]]
@@ -26,11 +41,12 @@ def q3(lst):
 
     return max([a[1]-a[0] for a in result])
 
-        
+
 
 for i in range(n):
     line = [int(j) for j in input().split()]
     intervals = [line[i:i+2] for i in range(0,len(line),2)]
     intervals.sort()
     print (q1(intervals))
+    print (q2(intervals))
     print (q3(intervals))
